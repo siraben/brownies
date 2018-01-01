@@ -1,0 +1,82 @@
+  <!DOCTYPE html> 
+  <html> 
+    <head> 
+      <meta charset="utf-8" /> 
+      <link rel="stylesheet" href="sakura.css" type="text/css">
+      <title>Ben's Brownie Brewery</title>
+    </head>
+    <body>
+      <h1>Ben's Brownie Brewery</h1>
+      <div id="bs-console">
+      </div>
+      <div id="message">
+      </div>
+      <div id="buttons">
+      </div>
+      <div id="test">
+        Your brownies are coming..
+      </div>
+
+      <script src="biwascheme.js">
+        (define *num_brownies* 1000)
+        (define *num_brewers* 0)
+
+        (define (2dec n)
+          (/ (truncate (* n 100)) 100))
+
+
+        (define (redraw)
+          (set-content! "#test"
+            (string-append "Brownies: " (number->string (2dec *num_brownies*))
+                         "\nBrewers: " (number->string *num_brewers*))))
+
+        (define (message! string)
+          (set-content! "#message" string))
+
+        (define (click)
+          (set! *num_brownies* (+ *num_brownies* 1))
+          (redraw))
+
+        (define (loop2)
+          (set! *num_brownies* (+ *num_brownies* 2))
+          (redraw))
+
+        (define (new-brewer)
+          (let ((cost (* 10 (expt 1.03 *num_brewers*))))
+            (js-invoke buy-brewer-button "setAttribute" "value" (string-append "Buy brewer (" (number->string (2dec cost)) ")" ))
+            (if (> cost *num_brownies*) (message! (string-append "Insufficient funds! You need "
+              (number->string (2dec cost)) " brownies."))
+
+               (begin (set-timer! click 10)
+                      (set! *num_brownies* (- *num_brownies* cost))
+                      (set! *num_brewers* (+ *num_brewers* 1)))))
+          (redraw))
+
+        
+        (console-log "ok.")
+
+        (define (create-button name proc)
+          (let ((button (js-eval "document.createElement('input')")))
+            (js-invoke button "setAttribute" "type" "button")
+            (js-invoke button "setAttribute" "value" name)
+            (add-handler! button "click" proc)
+            (element-append-child! ($ "#buttons") button)
+          button))
+
+
+        ; Later I want to make a procedure that handles price updates etc. automatically
+        ; 
+
+        (create-button "New brownie!" click)
+        (define buy-brewer-button (create-button "Buy brewer!" new-brewer))
+
+
+        (redraw)
+
+      </script>
+
+      
+
+      
+    </body>
+  </html>
