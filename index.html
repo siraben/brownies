@@ -1,82 +1,139 @@
-  <!DOCTYPE html> 
-  <html> 
-    <head> 
-      <meta charset="utf-8" /> 
-      <link rel="stylesheet" href="sakura.css" type="text/css">
-      <title>Ben's Brownie Brewery</title>
-    </head>
-    <body>
-      <h1>Ben's Brownie Brewery</h1>
-      <div id="bs-console">
-      </div>
-      <div id="message">
-      </div>
-      <div id="buttons">
-      </div>
-      <div id="test">
-        Your brownies are coming..
-      </div>
+<!DOCTYPE html> 
 
-      <script src="biwascheme.js">
-        (define *num_brownies* 0)
-        (define *num_brewers* 0)
+<html> 
+  <head> 
+    <meta charset="utf-8" /> 
+    <link rel="stylesheet" href="sakura.css" type="text/css">
+    <title>Ben's Brownie Brewery</title>
+  </head>
 
-        (define (2dec n)
-          (/ (truncate (* n 100)) 100))
+  <body>
+    <center><h1>Ben's Brownie Brewery</h1></center>
 
+    <p>
+      This is an incremental game I made using Biwascheme. The source is avaliable on 
+      <a href="https://github.com/siraben/brownies">my Github Repository</a> and is released
+      under the GNU GPLv3.
+    </p>
 
-        (define (redraw)
-          (set-content! "#test"
-            (string-append "Brownies: " (number->string (2dec *num_brownies*))
-                         "\nBrewers: " (number->string *num_brewers*))))
+    <div id="bs-console"></div>
+    <div id="message"></div>
+    <div id="buttons"></div>
+    <div id="dashboard">
+      The game is loading...
+    </div>
 
-        (define (message! string)
-          (set-content! "#message" string))
+    <script>
+      /*    
+      @licstart  The following is the entire license notice for the 
+      JavaScript code in this page.
 
-        (define (click)
-          (set! *num_brownies* (+ *num_brownies* 1))
-          (redraw))
+      Copyright (C) 2017  Siraphob (Ben) Phipathananunth
 
-        (define (loop2)
-          (set! *num_brownies* (+ *num_brownies* 2))
-          (redraw))
+      The JavaScript code in this page is free software: you can
+      redistribute it and/or modify it under the terms of the GNU
+      General Public License (GNU GPL) as published by the Free Software
+      Foundation, either version 3 of the License, or (at your option)
+      any later version.  The code is distributed WITHOUT ANY WARRANTY;
+      without even the implied warranty of MERCHANTABILITY or FITNESS
+      FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
 
-        (define (new-brewer)
-          (let ((cost (* 10 (expt 1.03 *num_brewers*))))
-            (js-invoke buy-brewer-button "setAttribute" "value" (string-append "Buy brewer (" (number->string (2dec cost)) ")" ))
-            (if (> cost *num_brownies*) (message! (string-append "Insufficient funds! You need "
-              (number->string (2dec cost)) " brownies."))
-
-               (begin (set-timer! click 10)
-                      (set! *num_brownies* (- *num_brownies* cost))
-                      (set! *num_brewers* (+ *num_brewers* 1)))))
-          (redraw))
-
-        
-        (console-log "ok.")
-
-        (define (create-button name proc)
-          (let ((button (js-eval "document.createElement('input')")))
-            (js-invoke button "setAttribute" "type" "button")
-            (js-invoke button "setAttribute" "value" name)
-            (add-handler! button "click" proc)
-            (element-append-child! ($ "#buttons") button)
-          button))
+      As additional permission under GNU GPL version 3 section 7, you
+      may distribute non-source (e.g., minimized or compacted) forms of
+      that code without the copy of the GNU GPL normally required by
+      section 4, provided you include this license notice and a URL
+      through which recipients can access the Corresponding Source.   
 
 
-        ; Later I want to make a procedure that handles price updates etc. automatically
-        ; 
+      @licend  The above is the entire license notice
+      for the JavaScript code in this page.
+      */
+    </script>
 
-        (create-button "New brownie!" click)
-        (define buy-brewer-button (create-button "Buy brewer!" new-brewer))
+    <script src="biwascheme.js">
+
+(define *num-brownies* 0)
+
+(define (2dec n)
+  (/ (truncate (* n 100)) 100))
+
+(define (redraw)
+  (set-content! "#dashboard"
+    (string-append "<h3>" "Brownies: " (number->string (2dec *num-brownies*))
+      "\nBrewers: " (number->string (brewers 'get-amount))
+      "\nGrandmas: " (number->string (grandmas 'get-amount))
+      "\nMines: " (number->string (mines 'get-amount))
+      "\nFactories "(number->string (factories 'get-amount)) "</h3>")))
+
+(define (message! string)
+  (set-content! "#message" string))
+
+(define (click)
+  (set! *num-brownies* (+ *num-brownies* 1))
+  (redraw))
+
+(define (name-button button new-name)
+  (js-invoke button "setAttribute" "value" new-name))
+
+(define (bind-proc-button button proc)
+  (add-handler! button "click" proc))
+
+(define (create-button . args)
+  (let ((button (js-eval "document.createElement('input')")))
+    (js-invoke button "setAttribute" "type" "button")
+    (name-button button (car args))
+    (if (= (length args) 2) (add-handler! button "click" (cadr args)))
+    (element-append-child! ($ "#buttons") button)
+    button))
+
+; Perhaps a bug in BiwaScheme? I can't seem to dynamically update button names.
+
+(define (make-new-purchase name price cps interest)
+  (let ((amount 0) (cost price) (button
+    (create-button (string-append "Buy " name " (" (number->string price) ")"))))
+
+  (js-invoke button "setAttribute" "title" (string-append "Gets " (number->string cps)" clicks per second."))
 
 
-        (redraw)
+  (define (buy)
+    (if (> cost *num-brownies*)
+      (message! (string-append "Insufficient funds! You need " (number->string (2dec cost)) " brownies."))
 
-      </script>
+    (begin 
+      (set! *num-brownies* (- *num-brownies* cost))
+      (set-timer! click (/ 1 cps))
+      (set! amount (+ amount 1))
+      (set! cost (* price (expt interest amount)))
+      (message! (string-append "Price of " name " now at " (number->string (2dec cost)) " brownies."))
+      (refresh))))
 
-      
+  (bind-proc-button button buy)
 
-      
-    </body>
-  </html>
+  (define (refresh)
+    (begin (set! cost (* price (expt interest amount)))
+      (name-button button (string-append "Buy " name " (" (number->string (2dec cost)) ")" ))))
+
+
+  (define (dispatch m)
+    (cond ((eq? m 'refresh) refresh)
+      ((eq? m 'buy) buy)
+      ((eq? m 'get-amount) amount)))
+  dispatch))
+
+
+(define manual-click (create-button "New brownie!" click))
+(js-invoke manual-click "setAttribute" "title" "What are you waiting for? Click me!")
+
+(define brewers (make-new-purchase "brewer" 15 0.1 1.15))
+
+(define grandmas (make-new-purchase "grandma" 100 0.8 1.15))
+
+(define mines (make-new-purchase "mine" 1000 5 1.15))
+
+(define factories (make-new-purchase "factory" 130000 260 1.15))
+
+(set-timer! redraw 0.1)
+
+    </script>
+  </body>
+</html>
