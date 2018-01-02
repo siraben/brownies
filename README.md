@@ -1,2 +1,2 @@
-# Ben-s-Brownie-Brewery
-This a game I hacked together with Biwascheme.
+# Ben's Brownie Brewery
+This a game I hacked together with [Biwascheme](https://github.com/biwascheme/biwascheme). If it feels similar to cookie clicker, that's because it was directly inspired by it! The game is more of a toy practice of using Biwascheme for interactive website content. There is currently an issue with the dynamic price updates on the buttons, it's probably a bug with Biwascheme itself.
