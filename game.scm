@@ -32,15 +32,11 @@
     (element-append-child! ($ "#buttons") button)
     button))
 
-;; Perhaps a bug in BiwaScheme? I can't seem to dynamically update button names.
-
 (define (make-new-purchase name price cps interest)
   (let ((amount 0)
         (cost price)
         (button
          (create-button (string-append "Buy " name " (" (number->string price) ")"))))
-
-    (js-invoke button "setAttribute" "title" (string-append "Gets " (number->string cps)" clicks per second."))
 
     (define (buy)
       (if (> cost *num-brownies*)
@@ -54,8 +50,6 @@
             (message! (string-append "Price of " name " now at " (number->string (2dec cost)) " brownies."))
             (refresh))))
 
-    (bind-proc-button button buy)
-
     (define (refresh)
       (begin (set! cost (* price (expt interest amount)))
              (name-button! button (string-append "Buy " name " (" (number->string (2dec cost)) ")" ))))
@@ -64,8 +58,10 @@
       (cond ((eq? m 'refresh) refresh)
             ((eq? m 'buy) buy)
             ((eq? m 'get-amount) amount)))
-    dispatch))
 
+    (js-invoke button "setAttribute" "title" (string-append "Gets " (number->string cps)" clicks per second."))
+    (bind-proc-button button buy)
+    dispatch))
 
 (define manual-click (create-button "New brownie!" click))
 (js-invoke manual-click "setAttribute" "title" "What are you waiting for? Click me!")
