@@ -2,7 +2,7 @@
  * BiwaScheme 0.6.8 - R6RS Scheme in JavaScript
  *
  * Copyright (c) 2007-2014 Yutaka HARA (http://www.biwascheme.org/)
- * @license Licensed under the MIT license.
+ * @license magnet:?xt=urn:btih:1f739d935676111cfff4b4693e3816e664797050&dn=gpl-3.0.txt GPL-v3-or-Later
  */
 
 var BiwaScheme = BiwaScheme || {};
